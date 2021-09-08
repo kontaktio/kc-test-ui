@@ -17,14 +17,13 @@
     <p>Full Name: <span id="name"></span></p>
     <p>First: <span id="givenName"></span></p>
     <p>Last: <span id="familyName"></span></p>
-    <p>Roles: <ul id="roles"></ul></p>
+    <p>Roles:
+        <ul id="roles"></ul>
+    </p>
 
     <script type="text/javascript">
         var keycloak = new Keycloak();
-        keycloak.init({onLoad: 'check-sso'}).then(() => {
-            console.log(keycloak.authenticated)
-            console.log('realmAccess', keycloak.realmAccess)
-            console.log('resourceAccess', keycloak.resourceAccess)
+        keycloak.init({ onLoad: 'check-sso' }).then(() => {
             if (keycloak.authenticated) {
                 document.getElementById('title').innerHTML = 'You are logged in';
                 reloadData();
@@ -42,7 +41,6 @@
                 document.getElementById('givenName').innerHTML = keycloak.idTokenParsed.given_name;
                 document.getElementById('familyName').innerHTML = keycloak.idTokenParsed.family_name;
 
-                console.log(keycloak.idTokenParsed)
                 for (const key in keycloak.resourceAccess) {
                     if (Object.hasOwnProperty.call(keycloak.resourceAccess, key)) {
                         const element = keycloak.resourceAccess[key];
@@ -69,7 +67,7 @@
         var reloadData = function () {
             keycloak.updateToken(10)
                 .then(loadData)
-                .catch(function () {
+                .catch(() => {
                     alert('Failed to load data.  User is logged out.');
                 });
         }
@@ -81,11 +79,33 @@
         const login = () => {
             keycloak.login();
         }
+
+        const callBackend = async () => {
+            const url = 'http://localhost:3000/service/secured';
+
+            const req = new XMLHttpRequest();
+            req.open('GET', url, true);
+            req.setRequestHeader('Accept', 'application/json');
+            req.setRequestHeader('Authorization', 'Bearer ' + keycloak.token);
+
+            req.onreadystatechange = function () {
+                if (req.readyState == 4) {
+                    if (req.status == 200) {
+                        alert(`Request response: ${req.response}`);
+                    } else {
+                        alert(`Request failed, status: ${req.status}`);
+                    }
+                }
+            }
+
+            req.send();
+        }
     </script>
 
     <br><br>
     <button onclick="login()">Login</button>
     <button onclick="logout()">Logout</button>
+    <button onclick="callBackend()">call backend endpoint</button>
 </body>
 
 </html>
